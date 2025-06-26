@@ -1,0 +1,194 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+{
+  "appName": "Fitness Tracker App",
+  "theme": {
+    "style": "Glassmorphism",
+    "background": {
+      "type": "gradient",
+      "colors": ["#DFF3FF", "#E5F0E0", "#F9EAE2"],
+      "blur": "medium"
+    },
+    "fonts": {
+      "primary": "SF Pro Display / Inter",
+      "weights": ["Regular", "Medium", "SemiBold", "Bold"]
+    },
+    "colors": {
+      "primary": "#A3E636",
+      "accent": "#6B72FF",
+      "textPrimary": "#000000",
+      "textSecondary": "#666666",
+      "backgroundCard": "rgba(255, 255, 255, 0.65)",
+      "shadow": "rgba(0, 0, 0, 0.1)"
+    },
+    "borderRadius": "16px",
+    "spacing": {
+      "padding": "16px",
+      "gap": "12px"
+    }
+  },
+  "screens": [
+    {
+      "name": "Onboarding",
+      "elements": [
+        {
+          "type": "image",
+          "content": "Runner Illustration",
+          "style": {
+            "alignment": "center",
+            "size": "large"
+          }
+        },
+        {
+          "type": "text",
+          "content": "Explore a Healthier Stronger Version of Yourself",
+          "style": {
+            "fontSize": "22px",
+            "fontWeight": "bold",
+            "textGradient": true
+          }
+        },
+        {
+          "type": "text",
+          "content": "Your commitment to fitness forges a stronger, healthier identity.",
+          "style": {
+            "fontSize": "14px",
+            "fontWeight": "regular",
+            "color": "#555"
+          }
+        },
+        {
+          "type": "button",
+          "label": "Get Started",
+          "style": {
+            "background": "linear-gradient(to right, #FCD7C1, #DADAE9)",
+            "borderRadius": "12px",
+            "padding": "14px 24px"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "elements": [
+        {
+          "type": "header",
+          "text": "Welcome back 👋",
+          "subtext": "Jobayer Mahbub",
+          "icon": "bell"
+        },
+        {
+          "type": "card",
+          "label": "Stay Energized",
+          "description": "Your Daily Boost of Energy",
+          "style": {
+            "gradient": true,
+            "rounded": true
+          }
+        },
+        {
+          "type": "metrics",
+          "items": [
+            {
+              "label": "Blood Pressure",
+              "value": "160 mg/hg",
+              "icon": "blood",
+              "chartType": "bar"
+            },
+            {
+              "label": "Water",
+              "value": "1,000 ml",
+              "icon": "water",
+              "chartType": "line"
+            }
+          ]
+        },
+        {
+          "type": "todaysPlan",
+          "tasks": [
+            {
+              "title": "Push Up",
+              "goal": "100 Push up a day",
+              "progress": 75,
+              "level": "Intermediate",
+              "thumbnail": "pushup.png"
+            },
+            {
+              "title": "Sit Up",
+              "goal": "30 Sit up a day",
+              "progress": 20,
+              "level": "Beginner",
+              "thumbnail": "situp.png"
+            }
+          ]
+        },
+        {
+          "type": "bottomNav",
+          "tabs": ["Home", "Workouts", "Add", "Reports", "Settings"],
+          "activeTab": "Home"
+        }
+      ]
+    },
+    {
+      "name": "Daily Report",
+      "datePicker": {
+        "format": "dd, MMM",
+        "defaultDate": "Today, 15 Apr",
+        "range": ["12", "13", "14", "15", "16", "17", "18"]
+      },
+      "elements": [
+        {
+          "type": "circularProgress",
+          "label": "Health Grade",
+          "value": "90%",
+          "subtext": "Perfect progress dude keep going to apply your fitness activity"
+        },
+        {
+          "type": "statsOverview",
+          "sections": [
+            {
+              "title": "Steps",
+              "value": "2,390 Steps / 2.51 km",
+              "chart": "bar",
+              "highlight": "3902"
+            },
+            {
+              "title": "Calories",
+              "value": "160",
+              "chart": "donut"
+            },
+            {
+              "title": "Heart beat",
+              "value": "80 bpm",
+              "chart": "line"
+            },
+            {
+              "title": "Blood Pressure",
+              "value": "160 mg/hg"
+            },
+            {
+              "title": "Water",
+              "value": "1,000 ml"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "icons": {
+    "set": "Lucide",
+    "style": "line",
+    "size": "24px"
+  },
+  "charts": {
+    "library": "Chart.js",
+    "types": ["bar", "line", "donut"],
+    "style": {
+      "smoothCurves": true,
+      "roundedBars": true
+    }
+  }
+}
