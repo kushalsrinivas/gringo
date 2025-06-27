@@ -1,145 +1,257 @@
 import { Colors, DesignTokens } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-interface DayData {
+export interface StreakData {
   date: Date;
   workoutCount: number;
-  isToday?: boolean;
+  intensity?: "none" | "low" | "medium" | "high";
 }
 
-interface ConsistencyCalendarProps {
-  days?: DayData[];
-  onDayPress?: (day: DayData) => void;
+export interface ConsistencyCalendarProps {
+  /**
+   * Array of streak data for each day. If not provided, generates demo data.
+   */
+  streakData?: StreakData[];
+
+  /**
+   * Starting date for the 28-day window. Defaults to 27 days ago from today.
+   */
+  startDate?: Date;
+
+  /**
+   * Callback when a day is pressed
+   */
+  onDayPress?: (data: StreakData) => void;
+
+  /**
+   * Whether to show the legend. Defaults to true.
+   */
+  showLegend?: boolean;
+
+  /**
+   * Whether to show statistics row. Defaults to true.
+   */
+  showStats?: boolean;
+
+  /**
+   * Custom title for the calendar
+   */
+  title?: string;
+
+  /**
+   * Whether to animate newly updated days
+   */
+  animateUpdates?: boolean;
 }
 
 export function ConsistencyCalendar({
-  days = [],
+  streakData,
+  startDate,
   onDayPress,
+  showLegend = true,
+  showStats = true,
+  title = "Consistency Calendar",
+  animateUpdates = true,
 }: ConsistencyCalendarProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const animatedValues = useRef<{ [key: string]: Animated.Value }>({});
 
-  // Generate last 28 days if no data provided
-  const generateLast28Days = (): DayData[] => {
-    const today = new Date();
-    const result: DayData[] = [];
+  // Generate 28 days of data
+  const generateCalendarData = (): StreakData[] => {
+    const endDate = new Date();
+    const start =
+      startDate || new Date(endDate.getTime() - 27 * 24 * 60 * 60 * 1000);
+    const data: StreakData[] = [];
 
-    for (let i = 27; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
+    for (let i = 0; i < 28; i++) {
+      const date = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+      const existing = streakData?.find(
+        (item) => item.date.toDateString() === date.toDateString()
+      );
 
-      result.push({
-        date,
-        workoutCount: Math.floor(Math.random() * 3), // Mock data
-        isToday: i === 0,
+      if (existing) {
+        data.push(existing);
+      } else {
+        // Generate demo data if no streak data provided
+        const workoutCount =
+          Math.random() > 0.3 ? Math.floor(Math.random() * 3) + 1 : 0;
+        data.push({
+          date,
+          workoutCount,
+          intensity: getIntensityLevel(workoutCount),
+        });
+      }
+    }
+
+    return data;
+  };
+
+  const calendarData = generateCalendarData();
+
+  // Initialize animated values for new days
+  useEffect(() => {
+    if (animateUpdates) {
+      calendarData.forEach((day, index) => {
+        const key = day.date.toDateString();
+        if (!animatedValues.current[key]) {
+          animatedValues.current[key] = new Animated.Value(0);
+          // Animate in with slight delay for wave effect
+          Animated.timing(animatedValues.current[key], {
+            toValue: 1,
+            duration: 300,
+            delay: index * 20,
+            useNativeDriver: true,
+          }).start();
+        }
       });
     }
+  }, [calendarData, animateUpdates]);
 
-    return result;
+  const getIntensityLevel = (
+    workoutCount: number
+  ): "none" | "low" | "medium" | "high" => {
+    if (workoutCount === 0) return "none";
+    if (workoutCount === 1) return "low";
+    if (workoutCount === 2) return "medium";
+    return "high";
   };
 
-  const calendarDays = days.length > 0 ? days : generateLast28Days();
+  const getIntensityColor = (intensity: "none" | "low" | "medium" | "high") => {
+    const baseColors = {
+      none: colorScheme === "dark" ? "#1a1a1a" : "#f0f0f0",
+      low: colorScheme === "dark" ? "#2d4a2d" : "#c6f7c6",
+      medium: colorScheme === "dark" ? "#4a6b2d" : "#8fdf8f",
+      high: colorScheme === "dark" ? "#6b8b2d" : "#4caf50",
+    };
+    return baseColors[intensity];
+  };
 
-  const getIntensityColor = (workoutCount: number) => {
-    if (workoutCount === 0) {
-      return colors.textSecondary + "20";
-    } else if (workoutCount === 1) {
-      return colors.primary + "40";
-    } else if (workoutCount === 2) {
-      return colors.primary + "70";
-    } else {
-      return colors.primary;
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const getDayNames = () => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const renderCalendarGrid = () => {
+    const dayNames = getDayNames();
+    const weeks: StreakData[][] = [];
+
+    // Group days into weeks (7 days each)
+    for (let i = 0; i < calendarData.length; i += 7) {
+      weeks.push(calendarData.slice(i, i + 7));
     }
-  };
-
-  const getDayName = (date: Date) => {
-    return date.toLocaleDateString("en-US", { weekday: "short" });
-  };
-
-  const getDateNumber = (date: Date) => {
-    return date.getDate();
-  };
-
-  const renderDay = (dayData: DayData, index: number) => {
-    const isToday = dayData.isToday;
-    const intensity = getIntensityColor(dayData.workoutCount);
 
     return (
-      <View key={index} style={styles.dayContainer}>
-        <Text style={[styles.dayName, { color: colors.textSecondary }]}>
-          {getDayName(dayData.date)}
-        </Text>
-        <View
-          style={[
-            styles.dayCell,
-            {
-              backgroundColor: intensity,
-              borderColor: isToday ? colors.primary : "transparent",
-              borderWidth: isToday ? 2 : 0,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.dayNumber,
-              {
-                color:
-                  dayData.workoutCount > 0
-                    ? colors.textPrimary
-                    : colors.textSecondary,
-                fontWeight: isToday
-                  ? DesignTokens.fontWeight.bold
-                  : DesignTokens.fontWeight.medium,
-              },
-            ]}
-          >
-            {getDateNumber(dayData.date)}
-          </Text>
-        </View>
-        {dayData.workoutCount > 0 && (
-          <View style={styles.workoutIndicator}>
-            <Text style={[styles.workoutCount, { color: colors.primary }]}>
-              {dayData.workoutCount}
+      <View style={styles.calendarContainer}>
+        {/* Day headers */}
+        <View style={styles.dayHeaderRow}>
+          {dayNames.map((dayName) => (
+            <Text
+              key={dayName}
+              style={[styles.dayHeader, { color: colors.textSecondary }]}
+            >
+              {dayName}
             </Text>
+          ))}
+        </View>
+
+        {/* Calendar grid */}
+        {weeks.map((week, weekIndex) => (
+          <View key={weekIndex} style={styles.weekRow}>
+            {week.map((day, dayIndex) => {
+              const animatedValue =
+                animatedValues.current[day.date.toDateString()];
+              const todayIndicator = isToday(day.date);
+
+              return (
+                <TouchableOpacity
+                  key={dayIndex}
+                  style={styles.dayContainer}
+                  onPress={() => onDayPress?.(day)}
+                  activeOpacity={0.7}
+                >
+                  <Animated.View
+                    style={[
+                      styles.dayCell,
+                      {
+                        backgroundColor: getIntensityColor(
+                          day.intensity || getIntensityLevel(day.workoutCount)
+                        ),
+                        borderColor: todayIndicator
+                          ? colors.primary
+                          : "transparent",
+                        borderWidth: todayIndicator ? 2 : 0,
+                        transform:
+                          animateUpdates && animatedValue
+                            ? [
+                                {
+                                  scale: animatedValue.interpolate({
+                                    inputRange: [0, 0.5, 1],
+                                    outputRange: [0.8, 1.1, 1],
+                                  }),
+                                },
+                              ]
+                            : [],
+                        opacity:
+                          animateUpdates && animatedValue ? animatedValue : 1,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayNumber,
+                        {
+                          color:
+                            day.workoutCount > 0
+                              ? colorScheme === "dark"
+                                ? "#ffffff"
+                                : "#000000"
+                              : colors.textSecondary,
+                          fontWeight: todayIndicator
+                            ? DesignTokens.fontWeight.bold
+                            : DesignTokens.fontWeight.medium,
+                        },
+                      ]}
+                    >
+                      {day.date.getDate()}
+                    </Text>
+                  </Animated.View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        )}
+        ))}
       </View>
     );
   };
 
-  const totalWorkouts = calendarDays.reduce(
-    (sum, day) => sum + day.workoutCount,
-    0
-  );
-  const activeDays = calendarDays.filter((day) => day.workoutCount > 0).length;
-  const consistencyPercentage = Math.round(
-    (activeDays / calendarDays.length) * 100
-  );
+  const renderStats = () => {
+    if (!showStats) return null;
 
-  return (
-    <View
-      style={[styles.container, { backgroundColor: colors.backgroundCard }]}
-    >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
-          Consistency Calendar
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Last 28 days
-        </Text>
-      </View>
+    const totalWorkouts = calendarData.reduce(
+      (sum, day) => sum + day.workoutCount,
+      0
+    );
+    const activeDays = calendarData.filter(
+      (day) => day.workoutCount > 0
+    ).length;
+    const consistencyPercentage = Math.round(
+      (activeDays / calendarData.length) * 100
+    );
+    const currentStreak = calculateCurrentStreak();
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.calendarContainer}
-      >
-        {calendarDays.map((day, index) => renderDay(day, index))}
-      </ScrollView>
-
-      <View style={styles.statsRow}>
+    return (
+      <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: colors.textPrimary }]}>
             {activeDays}
@@ -164,14 +276,55 @@ export function ConsistencyCalendar({
             Consistency
           </Text>
         </View>
+        <View style={styles.statItem}>
+          <Text
+            style={[
+              styles.statValue,
+              { color: colors.accent || colors.primary },
+            ]}
+          >
+            {currentStreak}
+          </Text>
+          <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+            Current Streak
+          </Text>
+        </View>
       </View>
+    );
+  };
 
-      <View style={styles.legend}>
-        <Text style={[styles.legendTitle, { color: colors.textSecondary }]}>
+  const calculateCurrentStreak = (): number => {
+    let streak = 0;
+    const sortedData = [...calendarData].reverse(); // Start from most recent
+
+    for (const day of sortedData) {
+      if (day.workoutCount > 0) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  const renderLegend = () => {
+    if (!showLegend) return null;
+
+    const intensityLevels: Array<"none" | "low" | "medium" | "high"> = [
+      "none",
+      "low",
+      "medium",
+      "high",
+    ];
+
+    return (
+      <View style={styles.legendContainer}>
+        <Text style={[styles.legendLabel, { color: colors.textSecondary }]}>
           Less
         </Text>
         <View style={styles.legendDots}>
-          {[0, 1, 2, 3].map((level) => (
+          {intensityLevels.map((level) => (
             <View
               key={level}
               style={[
@@ -181,10 +334,36 @@ export function ConsistencyCalendar({
             />
           ))}
         </View>
-        <Text style={[styles.legendTitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.legendLabel, { color: colors.textSecondary }]}>
           More
         </Text>
       </View>
+    );
+  };
+
+  return (
+    <View
+      style={[styles.container, { backgroundColor: colors.cardBackground }]}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
+          {title}
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          28 days • {calendarData.filter((d) => d.workoutCount > 0).length}{" "}
+          active days
+        </Text>
+      </View>
+
+      {/* Calendar Grid */}
+      {renderCalendarGrid()}
+
+      {/* Statistics */}
+      {renderStats()}
+
+      {/* Legend */}
+      {renderLegend()}
     </View>
   );
 }
@@ -197,7 +376,7 @@ const styles = StyleSheet.create({
     ...DesignTokens.shadows.sm,
   },
   header: {
-    marginBottom: DesignTokens.spacing.md,
+    marginBottom: DesignTokens.spacing.lg,
   },
   title: {
     fontSize: DesignTokens.fontSize.lg,
@@ -209,17 +388,29 @@ const styles = StyleSheet.create({
     fontWeight: DesignTokens.fontWeight.regular,
   },
   calendarContainer: {
-    paddingVertical: DesignTokens.spacing.sm,
+    marginBottom: DesignTokens.spacing.lg,
   },
-  dayContainer: {
-    alignItems: "center",
-    marginRight: DesignTokens.spacing.sm,
-    width: 32,
+  dayHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: DesignTokens.spacing.sm,
   },
-  dayName: {
+  dayHeader: {
     fontSize: DesignTokens.fontSize.xs,
     fontWeight: DesignTokens.fontWeight.medium,
+    textAlign: "center",
+    width: 32,
+  },
+  weekRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: DesignTokens.spacing.xs,
+  },
+  dayContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
   },
   dayCell: {
     width: 28,
@@ -227,37 +418,22 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: DesignTokens.spacing.xs,
   },
   dayNumber: {
     fontSize: DesignTokens.fontSize.xs,
     fontWeight: DesignTokens.fontWeight.medium,
   },
-  workoutIndicator: {
-    position: "absolute",
-    top: 40,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "rgba(163, 230, 54, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  workoutCount: {
-    fontSize: 8,
-    fontWeight: DesignTokens.fontWeight.bold,
-  },
-  statsRow: {
+  statsContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     paddingTop: DesignTokens.spacing.md,
     marginTop: DesignTokens.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
+    borderTopColor: "rgba(128, 128, 128, 0.2)",
   },
   statItem: {
     alignItems: "center",
+    flex: 1,
   },
   statValue: {
     fontSize: DesignTokens.fontSize.lg,
@@ -267,25 +443,26 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: DesignTokens.fontSize.xs,
     fontWeight: DesignTokens.fontWeight.medium,
+    textAlign: "center",
   },
-  legend: {
+  legendContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginTop: DesignTokens.spacing.md,
   },
-  legendTitle: {
+  legendLabel: {
     fontSize: DesignTokens.fontSize.xs,
     fontWeight: DesignTokens.fontWeight.medium,
   },
   legendDots: {
     flexDirection: "row",
     marginHorizontal: DesignTokens.spacing.sm,
+    gap: 2,
   },
   legendDot: {
-    width: 8,
-    height: 8,
+    width: 10,
+    height: 10,
     borderRadius: 2,
-    marginHorizontal: 1,
   },
 });

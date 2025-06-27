@@ -75,7 +75,7 @@ export const Colors = {
   },
   dark: {
     // Adapted for dark mode
-    background: '#00000',
+    background: '#000000',
     backgroundSecondary: '#1F2937',
     
     challengeBackground: '#065F46',

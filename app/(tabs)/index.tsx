@@ -23,6 +23,12 @@ import {
   updateUserWithDemoData,
 } from "@/db/database";
 
+// Components
+import {
+  ConsistencyCalendar,
+  type StreakData,
+} from "@/components/dashboard/ConsistencyCalendar";
+
 // Types
 import type {
   DailyChallenge,
@@ -149,7 +155,7 @@ export default function HomeScreen() {
             Welcome back, Jobayer 👋
           </Text>
           <Text style={[styles.subText, { color: colors.textLight }]}>
-            Let's crush your goals today!
+            Let&apos;s crush your goals today!
           </Text>
         </View>
 
@@ -213,7 +219,7 @@ export default function HomeScreen() {
             <Text
               style={[styles.challengeTitle, { color: colors.textPrimary }]}
             >
-              Today's Challenge
+              Today&apos;s Challenge
             </Text>
             <Text
               style={[styles.challengeText, { color: colors.textSecondary }]}
@@ -332,27 +338,14 @@ export default function HomeScreen() {
         </View>
 
         {/* Consistency Calendar */}
-        <View style={styles.calendarSection}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Consistency Calendar — 28 days
-          </Text>
-          <View style={styles.calendarGrid}>
-            {Array.from({ length: 28 }, (_, index) => {
-              let backgroundColor;
-              if (index < 5) backgroundColor = colors.calendarInactive;
-              else if (index < 12) backgroundColor = colors.calendarLow;
-              else if (index < 20) backgroundColor = colors.calendarMid;
-              else backgroundColor = colors.calendarHigh;
-
-              return (
-                <View
-                  key={index}
-                  style={[styles.calendarSquare, { backgroundColor }]}
-                />
-              );
-            })}
-          </View>
-        </View>
+        <ConsistencyCalendar
+          onDayPress={(data: StreakData) => {
+            console.log("Day pressed:", data);
+          }}
+          showLegend={true}
+          showStats={true}
+          animateUpdates={true}
+        />
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
@@ -560,22 +553,6 @@ const styles = StyleSheet.create({
   },
   flameIcon: {
     fontSize: 20,
-  },
-
-  // Calendar section
-  calendarSection: {
-    marginBottom: DesignTokens.spacing.xl,
-  },
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: DesignTokens.spacing.xs,
-    justifyContent: "flex-start",
-  },
-  calendarSquare: {
-    width: 20,
-    height: 20,
-    borderRadius: DesignTokens.borderRadiusXSmall,
   },
 
   // Bottom spacing
