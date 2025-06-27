@@ -1,6 +1,5 @@
 import { Colors, DesignTokens } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -9,6 +8,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -23,16 +23,6 @@ import {
   updateUserWithDemoData,
 } from "@/db/database";
 
-// Component imports
-import { ConsistencyCalendar } from "@/components/dashboard/ConsistencyCalendar";
-import { DateStrip } from "@/components/dashboard/DateStrip";
-import { EnhancedLevelProgress } from "@/components/dashboard/EnhancedLevelProgress";
-import { HealthMetrics } from "@/components/dashboard/HealthMetrics";
-import { MotivationalQuote } from "@/components/dashboard/MotivationalQuote";
-import { StatsOverview } from "@/components/dashboard/StatsOverview";
-import { StreakIndicator } from "@/components/dashboard/StreakIndicator";
-import { TodaysChallengeCard } from "@/components/dashboard/TodaysChallengeCard";
-
 // Types
 import type {
   DailyChallenge,
@@ -43,7 +33,7 @@ import type {
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = Colors["light"];
 
   // State
   const [user, setUser] = useState<User | null>(null);
@@ -62,7 +52,7 @@ export default function HomeScreen() {
     async function initializeApp() {
       try {
         await initializeDatabase();
-        await updateUserWithDemoData(); // Add demo data for showcase
+        await updateUserWithDemoData();
         await loadDashboardData();
       } catch (error) {
         console.error("Failed to initialize app:", error);
@@ -77,23 +67,18 @@ export default function HomeScreen() {
 
   const loadDashboardData = async () => {
     try {
-      // Load user data
       const userData = await getCurrentUser();
       setUser(userData);
 
-      // Load random quote
       const quoteData = await getRandomQuote();
       setQuote(quoteData);
 
-      // Load today's metrics
       const metricsData = await getTodaysMetrics();
       setMetrics(metricsData);
 
-      // Load today's challenges
       const challengesData = await getTodaysChallenges();
       setChallenges(challengesData);
 
-      // Load workout statistics
       if (userData) {
         const statsData = await getUserWorkoutStats(userData.id);
         setWorkoutStats(statsData);
@@ -101,16 +86,6 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     }
-  };
-
-  // Calculate XP for next level (simple formula)
-  const calculateXPToNextLevel = (level: number) => {
-    return level * 1000; // 1000 XP per level
-  };
-
-  const calculateCurrentLevelXP = (totalXP: number, level: number) => {
-    const previousLevelXP = (level - 1) * 1000;
-    return totalXP - previousLevelXP;
   };
 
   if (loading) {
@@ -127,6 +102,26 @@ export default function HomeScreen() {
     );
   }
 
+  // Generate current week dates
+  const getCurrentWeekDates = () => {
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDay);
+
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      weekDates.push(date);
+    }
+    return weekDates;
+  };
+
+  const weekDates = getCurrentWeekDates();
+  const today = new Date();
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -136,111 +131,230 @@ export default function HomeScreen() {
         backgroundColor={colors.background}
       />
 
-      {/* Gradient Background */}
-      <LinearGradient
-        colors={[
-          colors.gradientStart,
-          colors.gradientMiddle,
-          colors.gradientEnd,
-        ]}
-        style={styles.gradientBackground}
-      />
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.welcomeText, { color: colors.textSecondary }]}>
-              Welcome back 👋
-            </Text>
-            <Text style={[styles.nameText, { color: colors.textPrimary }]}>
-              {user?.name || "Fitness Enthusiast"}
-            </Text>
-          </View>
-          <View style={styles.notificationIcon}>
-            <Text style={styles.bellIcon}>🔔</Text>
-          </View>
+        {/* Time Stamp */}
+        <View style={styles.timeContainer}>
+          <Text style={[styles.timeText, { color: colors.textPrimary }]}>
+            9:41
+          </Text>
+        </View>
+
+        {/* Header Section */}
+        <View style={styles.headerSection}>
+          <Text style={[styles.welcomeText, { color: colors.textPrimary }]}>
+            Welcome back, Jobayer 👋
+          </Text>
+          <Text style={[styles.subText, { color: colors.textLight }]}>
+            Let's crush your goals today!
+          </Text>
         </View>
 
         {/* Date Strip */}
-        <DateStrip />
+        <View style={styles.dateStrip}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dateStripContent}
+          >
+            {weekDates.map((date, index) => {
+              const isToday = date.toDateString() === today.toDateString();
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.dateItem,
+                    {
+                      backgroundColor: isToday
+                        ? colors.dateActive
+                        : colors.dateInactive,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.dayText,
+                      {
+                        color: isToday ? colors.textPrimary : colors.textMuted,
+                      },
+                    ]}
+                  >
+                    {dayNames[date.getDay()]}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dateText,
+                      {
+                        color: isToday
+                          ? colors.textPrimary
+                          : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {date.getDate()}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* Today's Challenge Card */}
-        {challenges.length > 0 && (
-          <TodaysChallengeCard
-            challenge={{
-              id: challenges[0].id,
-              title: challenges[0].title,
-              description: challenges[0].description,
-              progress: Math.floor(Math.random() * challenges[0].target), // Mock progress
-              target: challenges[0].target,
-              xpReward: challenges[0].xpReward,
-              type: challenges[0].type,
-            }}
-            onPress={() =>
-              Alert.alert(
-                "Challenge Details",
-                `${challenges[0].title}: ${challenges[0].description}`
-              )
-            }
-          />
-        )}
+        <View
+          style={[
+            styles.challengeCard,
+            { backgroundColor: colors.challengeBackground },
+          ]}
+        >
+          <View style={styles.challengeContent}>
+            <Text
+              style={[styles.challengeTitle, { color: colors.textPrimary }]}
+            >
+              Today's Challenge
+            </Text>
+            <Text
+              style={[styles.challengeText, { color: colors.textSecondary }]}
+            >
+              Take the stairs instead of the elevator 🏃‍♂️
+            </Text>
+          </View>
+        </View>
 
-        {/* Enhanced Level Progress */}
-        {user && (
-          <EnhancedLevelProgress
-            currentLevel={user.level}
-            currentXP={calculateCurrentLevelXP(user.totalXP, user.level)}
-            xpToNextLevel={calculateXPToNextLevel(user.level)}
-            totalXP={user.totalXP}
-          />
-        )}
+        {/* Level Progress Card */}
+        <View
+          style={[
+            styles.levelCard,
+            {
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.cardBorder,
+            },
+          ]}
+        >
+          <View style={styles.levelHeader}>
+            <Text style={[styles.levelTitle, { color: colors.textPrimary }]}>
+              Level Progress
+            </Text>
+            <Text style={[styles.levelNumber, { color: colors.textPrimary }]}>
+              Level 12
+            </Text>
+          </View>
+          <View style={styles.progressContainer}>
+            <View
+              style={[
+                styles.progressTrack,
+                { backgroundColor: colors.progressTrack },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: colors.progressFill,
+                    width: "74%",
+                  },
+                ]}
+              />
+            </View>
+            <Text style={[styles.xpText, { color: colors.textLight }]}>
+              1850 / 2500 XP
+            </Text>
+          </View>
+        </View>
 
-        {/* Stats Overview */}
-        <StatsOverview
-          totalWorkouts={workoutStats.totalWorkouts}
-          totalMinutes={workoutStats.totalMinutes}
-          totalVolume={workoutStats.totalVolume}
-        />
+        {/* Stats Overview Section */}
+        <View style={styles.statsSection}>
+          <View
+            style={[styles.statCard, { backgroundColor: colors.statsMint }]}
+          >
+            <Text style={[styles.statIcon]}>💪</Text>
+            <Text style={[styles.statValue, { color: colors.textPrimary }]}>
+              53
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Workouts
+            </Text>
+          </View>
 
-        {/* Streak Indicator */}
-        {user && (
-          <StreakIndicator
-            currentStreak={user.currentStreak}
-            longestStreak={user.longestStreak}
-            streakGoal={30}
-          />
-        )}
+          <View
+            style={[styles.statCard, { backgroundColor: colors.statsSkyBlue }]}
+          >
+            <Text style={[styles.statIcon]}>⏱️</Text>
+            <Text style={[styles.statValue, { color: colors.textPrimary }]}>
+              1260
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Minutes
+            </Text>
+          </View>
+
+          <View
+            style={[styles.statCard, { backgroundColor: colors.statsBlush }]}
+          >
+            <Text style={[styles.statIcon]}>🏋️</Text>
+            <View style={styles.volumeContainer}>
+              <Text style={[styles.statValue, { color: colors.textPrimary }]}>
+                23,540.5
+              </Text>
+              <Text
+                style={[styles.volumeUnit, { color: colors.textSecondary }]}
+              >
+                kg
+              </Text>
+            </View>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Volume
+            </Text>
+          </View>
+        </View>
+
+        {/* Streak Tracker */}
+        <View style={styles.streakSection}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Streak Tracker
+          </Text>
+          <View style={styles.streakContainer}>
+            <View style={styles.streakDots}>
+              {Array.from({ length: 8 }, (_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.streakDot,
+                    { backgroundColor: colors.streakActive },
+                  ]}
+                />
+              ))}
+            </View>
+            <Text style={[styles.flameIcon]}>🔥</Text>
+          </View>
+        </View>
 
         {/* Consistency Calendar */}
-        <ConsistencyCalendar />
+        <View style={styles.calendarSection}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Consistency Calendar — 28 days
+          </Text>
+          <View style={styles.calendarGrid}>
+            {Array.from({ length: 28 }, (_, index) => {
+              let backgroundColor;
+              if (index < 5) backgroundColor = colors.calendarInactive;
+              else if (index < 12) backgroundColor = colors.calendarLow;
+              else if (index < 20) backgroundColor = colors.calendarMid;
+              else backgroundColor = colors.calendarHigh;
 
-        {/* Health Metrics */}
-        {metrics.length > 0 && (
-          <HealthMetrics
-            metrics={metrics.map((metric) => ({
-              type: metric.type,
-              value: metric.value,
-              unit: metric.unit,
-              trend: "neutral" as const,
-            }))}
-          />
-        )}
+              return (
+                <View
+                  key={index}
+                  style={[styles.calendarSquare, { backgroundColor }]}
+                />
+              );
+            })}
+          </View>
+        </View>
 
-        {/* Motivational Quote */}
-        {quote && (
-          <MotivationalQuote
-            quote={quote.text}
-            author={quote.author || undefined}
-            category={quote.category || undefined}
-          />
-        )}
-
-        {/* Bottom Spacing */}
+        {/* Bottom spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
     </SafeAreaView>
@@ -251,18 +365,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  gradientBackground: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: DesignTokens.spacing.lg,
+    paddingHorizontal: DesignTokens.spacing.xl,
+    paddingTop: DesignTokens.spacing.lg,
   },
   loadingContainer: {
     flex: 1,
@@ -270,37 +378,208 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontSize: DesignTokens.fontSize.base,
+    fontSize: DesignTokens.fontSize.lg,
     fontWeight: DesignTokens.fontWeight.medium,
   },
-  header: {
+
+  // Time stamp
+  timeContainer: {
+    alignItems: "flex-start",
+    marginBottom: DesignTokens.spacing.lg,
+  },
+  timeText: {
+    fontSize: DesignTokens.fontSize.lg,
+    fontWeight: DesignTokens.fontWeight.light,
+  },
+
+  // Header section
+  headerSection: {
+    marginBottom: DesignTokens.spacing.xl,
+  },
+  welcomeText: {
+    fontSize: DesignTokens.fontSize.xxl,
+    fontWeight: DesignTokens.fontWeight.bold,
+    marginBottom: DesignTokens.spacing.xs,
+  },
+  subText: {
+    fontSize: DesignTokens.fontSize.base,
+    fontWeight: DesignTokens.fontWeight.regular,
+  },
+
+  // Date strip
+  dateStrip: {
+    marginBottom: DesignTokens.spacing.xl,
+  },
+  dateStripContent: {
+    paddingRight: DesignTokens.spacing.lg,
+  },
+  dateItem: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: DesignTokens.spacing.sm,
+  },
+  dayText: {
+    fontSize: DesignTokens.fontSize.xs,
+    fontWeight: DesignTokens.fontWeight.medium,
+    marginBottom: 2,
+  },
+  dateText: {
+    fontSize: DesignTokens.fontSize.sm,
+    fontWeight: DesignTokens.fontWeight.semibold,
+  },
+
+  // Challenge card
+  challengeCard: {
+    borderRadius: DesignTokens.borderRadius,
+    padding: DesignTokens.spacing.xl,
+    marginBottom: DesignTokens.spacing.xl,
+  },
+  challengeContent: {
+    alignItems: "flex-start",
+  },
+  challengeTitle: {
+    fontSize: DesignTokens.fontSize.lg,
+    fontWeight: DesignTokens.fontWeight.bold,
+    marginBottom: DesignTokens.spacing.sm,
+  },
+  challengeText: {
+    fontSize: DesignTokens.fontSize.base,
+    fontWeight: DesignTokens.fontWeight.medium,
+    lineHeight: 22,
+  },
+
+  // Level progress card
+  levelCard: {
+    borderRadius: DesignTokens.borderRadius,
+    borderWidth: 1,
+    padding: DesignTokens.spacing.xl,
+    marginBottom: DesignTokens.spacing.xl,
+    ...DesignTokens.shadows.sm,
+  },
+  levelHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: DesignTokens.spacing.xl,
-    paddingTop: DesignTokens.spacing.md,
+    marginBottom: DesignTokens.spacing.lg,
   },
-  welcomeText: {
-    fontSize: DesignTokens.fontSize.base,
-    fontWeight: DesignTokens.fontWeight.regular,
-    marginBottom: DesignTokens.spacing.xs,
-  },
-  nameText: {
-    fontSize: DesignTokens.fontSize.xl,
+  levelTitle: {
+    fontSize: DesignTokens.fontSize.lg,
     fontWeight: DesignTokens.fontWeight.bold,
   },
-  notificationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
+  levelNumber: {
+    fontSize: DesignTokens.fontSize.base,
+    fontWeight: DesignTokens.fontWeight.semibold,
+  },
+  progressContainer: {
     alignItems: "center",
   },
-  bellIcon: {
+  progressTrack: {
+    width: "100%",
+    height: 8,
+    borderRadius: 4,
+    marginBottom: DesignTokens.spacing.sm,
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  xpText: {
+    fontSize: DesignTokens.fontSize.sm,
+    fontWeight: DesignTokens.fontWeight.medium,
+  },
+
+  // Stats section
+  statsSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: DesignTokens.spacing.xl,
+    gap: DesignTokens.spacing.sm,
+  },
+  statCard: {
+    width: 110,
+    height: 80,
+    borderRadius: DesignTokens.borderRadiusSmall,
+    padding: DesignTokens.spacing.sm,
+    justifyContent: "center",
+    alignItems: "center",
+    ...DesignTokens.shadows.sm,
+  },
+  statIcon: {
+    fontSize: 16,
+    marginBottom: DesignTokens.spacing.xs,
+  },
+  statValue: {
+    fontSize: DesignTokens.fontSize.lg,
+    fontWeight: DesignTokens.fontWeight.bold,
+    textAlign: "center",
+  },
+  volumeContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "center",
+  },
+  volumeUnit: {
+    fontSize: DesignTokens.fontSize.xs,
+    fontWeight: DesignTokens.fontWeight.medium,
+    marginLeft: 2,
+  },
+  statLabel: {
+    fontSize: DesignTokens.fontSize.xs,
+    fontWeight: DesignTokens.fontWeight.medium,
+    marginTop: DesignTokens.spacing.xs,
+    textAlign: "center",
+  },
+
+  // Streak section
+  streakSection: {
+    marginBottom: DesignTokens.spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: DesignTokens.fontSize.lg,
+    fontWeight: DesignTokens.fontWeight.bold,
+    marginBottom: DesignTokens.spacing.md,
+  },
+  streakContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  streakDots: {
+    flexDirection: "row",
+    flex: 1,
+    justifyContent: "space-between",
+    paddingRight: DesignTokens.spacing.md,
+  },
+  streakDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  flameIcon: {
     fontSize: 20,
   },
+
+  // Calendar section
+  calendarSection: {
+    marginBottom: DesignTokens.spacing.xl,
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: DesignTokens.spacing.xs,
+    justifyContent: "flex-start",
+  },
+  calendarSquare: {
+    width: 20,
+    height: 20,
+    borderRadius: DesignTokens.borderRadiusXSmall,
+  },
+
+  // Bottom spacing
   bottomSpacing: {
-    height: DesignTokens.spacing.xxl,
+    height: DesignTokens.spacing.xxxl,
   },
 });

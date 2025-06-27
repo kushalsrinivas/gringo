@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
+import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import { openDatabaseSync } from 'expo-sqlite';
+import migrations from '../drizzle/migrations';
 import * as schema from './schema';
 import {
     dailyChallenges,
@@ -19,8 +21,9 @@ export const db = drizzle(expo, { schema });
 // Database initialization function
 export async function initializeDatabase() {
   try {
-    // Create tables if they don't exist (Drizzle handles this with migrations)
-    console.log('Database initialized successfully');
+    // Run migrations to create tables
+    await migrate(db, migrations);
+    console.log('Database migrations completed successfully');
     
     // Check if we need to seed initial data
     await seedInitialData();
