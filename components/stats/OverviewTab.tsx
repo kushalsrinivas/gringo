@@ -6,6 +6,7 @@ import { BarChart, LineChart } from "react-native-chart-kit";
 import { GlassCard } from "../ui/GlassCard";
 import { MetricCard } from "../ui/MetricCard";
 import { ConsistencyHeatmap } from "./ConsistencyHeatmap";
+import { TopExercises } from "./TopExercises";
 
 const { width: screenWidth } = Dimensions.get("window");
 const chartWidth = screenWidth - DesignTokens.spacing.lg * 2;
@@ -183,6 +184,8 @@ export function OverviewTab() {
             data={weeklyVolumeData}
             width={chartWidth - DesignTokens.spacing.lg * 2}
             height={200}
+            yAxisLabel=""
+            yAxisSuffix="kg"
             chartConfig={{
               ...chartConfig,
               barPercentage: 0.7,

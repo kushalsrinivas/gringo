@@ -4,6 +4,7 @@ import React from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import { GlassCard } from "../ui/GlassCard";
+import { WorkoutSplitDistribution } from "./WorkoutSplitDistribution";
 
 const { width: screenWidth } = Dimensions.get("window");
 const chartWidth = screenWidth - DesignTokens.spacing.lg * 2;
